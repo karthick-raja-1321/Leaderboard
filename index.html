@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Classroom Leaderboard</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><path fill='%2356ccf2' d='M4 1v1H2v4c0 2 1.5 3.5 3.5 4L6 11H5v1h6v-1H9.5l-.5-1C13 9.5 14 8 14 6V2h-2V1H4zm1 1h6v3H5V2zM3 3h1v2.8C3.4 5.4 3 4.7 3 4V3zm9 0h1v1c0 .7-.4 1.4-1 1.8V3zM6.5 12v1H6v1h4v-1h-.5v-1h-3z'/></svg>">
   <style>
     :root {
       color-scheme: dark;
@@ -389,6 +390,13 @@
       font-weight: 700;
     }
 
+    .tier-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+
     .avatar {
       width: 56px;
       height: 56px;
@@ -692,7 +700,7 @@
     <aside class="panel">
       <div class="hero">
         <div>
-          <h1>⚡ Classroom Leaderboard</h1>
+          <h1>Classroom Leaderboard</h1>
           <p>Run live guest lecture competitions with instant ranking, top-5 spotlight cards, score effects, and classroom-friendly controls.</p>
         </div>
       </div>
@@ -700,7 +708,7 @@
       <section class="card">
         <div class="section-header">
           <h2 class="section-title">Teacher Control Panel</h2>
-          <span class="badge" id="roundBadge">🏁 Round 1</span>
+          <span class="badge" id="roundBadge">Round 1</span>
         </div>
 
         <div class="status-stack">
@@ -756,7 +764,7 @@
       <section class="card">
         <div class="section-header">
           <h2 class="section-title">Live Statistics</h2>
-          <span class="badge">📈 Insights</span>
+          <span class="badge">Insights</span>
         </div>
         <div class="stats-grid" id="statsGrid"></div>
       </section>
@@ -769,7 +777,7 @@
             <h2 class="section-title">Top 5 Spotlight</h2>
             <div class="tiny">Diamond, platinum, gold, silver, and bronze cards update live as scores change.</div>
           </div>
-          <span class="badge" id="leaderBadge">👑 Awaiting leader</span>
+          <span class="badge" id="leaderBadge">Awaiting leader</span>
         </div>
         <div class="top-grid" id="topFiveGrid"></div>
       </section>
@@ -807,14 +815,13 @@
         'Aarav', 'Diya', 'Meera', 'Vihaan', 'Aanya', 'Rishi', 'Saanvi', 'Ishaan', 'Kavin', 'Nila',
         'Advik', 'Tara', 'Reyansh', 'Anika', 'Rudra', 'Maya', 'Tejas', 'Ira', 'Yuvan', 'Kiara'
       ];
-      const emojiPool = ['🚀', '🎯', '⚡', '🎓', '🌟', '🧠', '🔥', '🎮', '📚', '🏅'];
       const AUDIO_VOLUME = 0.08;
       const topStyles = [
-        { title: 'Diamond Crown', emoji: '👑' },
-        { title: 'Platinum Charge', emoji: '💠' },
-        { title: 'Gold Pulse', emoji: '🥇' },
-        { title: 'Silver Sprint', emoji: '✨' },
-        { title: 'Bronze Boost', emoji: '🟤' }
+        { title: 'Diamond Crown', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M1 13v1h14v-1H1zm13-9-4 3.5L8 1 6 7.5 2 4l1.5 6.5h9L15 4z"/></svg>' },
+        { title: 'Platinum Charge', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="m8 1-6.5 5 6.5 9 6.5-9L8 1zm0 1.8 4.2 3.5-4.2 5.9-4.2-5.9L8 2.8z"/></svg>' },
+        { title: 'Gold Pulse', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1 9.8 6h5.2l-4.2 3 1.6 5L8 11l-4.4 3 1.6-5L1 6h5.2L8 1z"/></svg>' },
+        { title: 'Silver Sprint', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1 2 3v4c0 4 2.5 6.5 6 8 3.5-1.5 6-4 6-8V3L8 1zm0 1.5 5 1.8V7c0 3.2-2 5.2-5 6.5C5 12.2 3 10.2 3 7V4.3L8 2.5z"/></svg>' },
+        { title: 'Bronze Boost', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"/></svg>' }
       ];
 
       const state = loadState() || {
@@ -1108,7 +1115,7 @@
           { label: 'Students', value: `${orderedStudents.length}` },
           { label: 'Average Score', value: orderedStudents.length ? (totalScore / orderedStudents.length).toFixed(1) : '0.0' },
           { label: 'Most Improved', value: mostImproved ? `${mostImproved.name} (+${mostImproved.improvement})` : 'No data yet' },
-          { label: 'Fastest Gain', value: fastestGain ? `${fastestGain.name} ⚡` : 'Waiting for scores' }
+          { label: 'Fastest Gain', value: fastestGain ? `${fastestGain.name}` : 'Waiting for scores' }
         ];
 
         dom.statsGrid.innerHTML = stats.map(stat => `
@@ -1126,7 +1133,7 @@
           if (!student) {
             return `
               <article class="top-card rank-${index + 1}">
-                <div class="top-rank">${style.emoji} Rank ${index + 1}</div>
+                <div class="top-rank">${style.icon} Rank ${index + 1}</div>
                 <div class="top-copy">
                   <h3>Open Slot</h3>
                   <p class="muted">Add more students to unlock this podium card.</p>
@@ -1137,7 +1144,7 @@
 
           return `
             <article class="top-card rank-${index + 1}">
-              <div class="top-rank">${index === 0 ? '👑' : style.emoji} Rank ${student.rank}</div>
+              <div class="top-rank">${style.icon} Rank ${student.rank}</div>
               <div class="top-copy">
                 <div class="avatar">${student.avatar}</div>
                 <h3>${escapeHtml(student.name)}</h3>
@@ -1210,14 +1217,14 @@
 
       function renderMeta(orderedStudents) {
         dom.studentCountBadge.textContent = `${orderedStudents.length} ${orderedStudents.length === 1 ? 'Student' : 'Students'}`;
-        dom.roundBadge.textContent = `🏁 Round ${state.round}`;
+        dom.roundBadge.textContent = `Round ${state.round}`;
         dom.autoSortStatus.textContent = state.autoSort ? 'Auto-sort ON' : 'Auto-sort OFF';
         dom.leaderboardSubtitle.textContent = orderedStudents.length
           ? `${orderedStudents.length} active students • Scores re-rank in real time${state.autoSort ? '' : ' when auto-sort is re-enabled'}.`
           : 'Add students to start the session.';
         dom.leaderBadge.textContent = orderedStudents[0]
-          ? `👑 ${orderedStudents[0].name} leads with ${orderedStudents[0].score} pts`
-          : '👑 Awaiting leader';
+          ? `${orderedStudents[0].name} leads with ${orderedStudents[0].score} pts`
+          : 'Awaiting leader';
         renderTimer();
       }
 
@@ -1373,7 +1380,7 @@
 
       function createAvatar(name, seed) {
         const initials = name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
-        return initials || emojiPool[seed % emojiPool.length];
+        return initials || '#';
       }
 
       function sanitizeName(value) {
