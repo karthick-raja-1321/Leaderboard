@@ -580,7 +580,7 @@ function loadTheme() {
 function setSortMode(mode) {
   state.sortMode = mode;
   ['score', 'name', 'time'].forEach(m => {
-    const btn = document.getElementById(`btn-sort-${m === 'score' ? 'score' : m === 'name' ? 'name' : 'time'}`);
+    const btn = document.getElementById(`btn-sort-${m}`);
     if (btn) btn.classList.toggle('btn-sort-active', m === mode);
   });
   renderScoreboard();
