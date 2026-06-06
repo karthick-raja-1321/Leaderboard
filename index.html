@@ -864,7 +864,7 @@
       let previousOrder = state.students.map(student => student.id);
       let previousLeaderId = state.leaderId;
 
-      // Normalize any stored state so new properties are always available.
+      // Initialize missing stored properties so older localStorage data stays compatible with the latest UI state.
       state.students = state.students.map(student => ({
         ...student,
         score: Number(student.score) || 0,
@@ -1233,7 +1233,7 @@
           ['Rank', 'Name', 'Score', 'Round'],
           ...orderedStudents.map(student => [student.rank, student.name, student.score, state.round])
         ];
-        const csv = rows.map(row => row.map(value => `"${String(value).replaceAll('"', '""')}"`).join(',')).join('\n');
+        const csv = rows.map(row => row.map(escapeCsvValue).join(',')).join('\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -1334,6 +1334,7 @@
 
       function ensureAudio() {
         if (audioContext || state.muted) return;
+        // Keep the webkit-prefixed fallback for older Safari versions.
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if (!AudioCtx) return;
         audioContext = new AudioCtx();
@@ -1401,6 +1402,10 @@
           .replaceAll('>', '&gt;')
           .replaceAll('"', '&quot;')
           .replaceAll("'", '&#39;');
+      }
+
+      function escapeCsvValue(value) {
+        return `"${String(value).replaceAll('"', '""')}"`;
       }
 
       function saveState() {
