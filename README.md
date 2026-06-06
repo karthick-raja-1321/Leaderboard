@@ -4,10 +4,10 @@ Interactive real-time classroom leaderboard web app built with plain HTML, CSS, 
 
 ## Run locally
 
-Open `/tmp/workspace/karthick-raja-1321/Leaderboard/index.html` in a browser, or serve the repository with a simple static server such as:
+Open `index.html` in a browser, or serve the project directory with a simple static server such as:
 
 ```bash
-cd /tmp/workspace/karthick-raja-1321/Leaderboard
+cd /path/to/Leaderboard
 python3 -m http.server 8000
 ```
 

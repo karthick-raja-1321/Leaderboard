@@ -750,7 +750,7 @@
           <button class="control-button warn" id="resetScoresBtn">Reset Scores</button>
           <button class="control-button danger" id="clearSessionBtn">Clear Session</button>
         </div>
-        <p class="footer-note">Tie handling keeps equal scores on the same rank while preserving the earliest achiever first. Sound uses lightweight Web Audio beeps and gracefully stays silent until you interact.</p>
+        <p class="footer-note">Tie handling keeps equal scores on the same rank while preserving the first student to reach that score. Sound uses lightweight Web Audio beeps and gracefully stays silent until you interact.</p>
       </section>
 
       <section class="card">
@@ -808,10 +808,11 @@
         'Advik', 'Tara', 'Reyansh', 'Anika', 'Rudra', 'Maya', 'Tejas', 'Ira', 'Yuvan', 'Kiara'
       ];
       const emojiPool = ['🚀', '🎯', '⚡', '🎓', '🌟', '🧠', '🔥', '🎮', '📚', '🏅'];
+      const AUDIO_VOLUME = 0.08;
       const topStyles = [
         { title: 'Diamond Crown', emoji: '👑' },
-        { title: 'Platinum Charge', emoji: '🥈' },
-        { title: 'Gold Pulse', emoji: '🥉' },
+        { title: 'Platinum Charge', emoji: '💠' },
+        { title: 'Gold Pulse', emoji: '🥇' },
         { title: 'Silver Sprint', emoji: '✨' },
         { title: 'Bronze Boost', emoji: '🟤' }
       ];
@@ -926,10 +927,11 @@
           return;
         }
 
+        const studentId = state.nextId++;
         const student = {
-          id: state.nextId++,
+          id: studentId,
           name,
-          avatar: createAvatar(name, state.nextId),
+          avatar: createAvatar(name, studentId),
           score: 0,
           createdAt: Date.now(),
           lastModifiedAt: Date.now(),
@@ -943,7 +945,7 @@
         dom.studentNameInput.value = '';
         logEvent(`${student.name} joined the session.`);
         notify('Student added', `${student.name} is ready to compete.`);
-        updateLeaderboard();
+        updateLeaderboard(previousLeaderId, false);
       }
 
       function addRandomStudent() {
@@ -957,7 +959,7 @@
         state.students = state.students.filter(item => item.id !== id);
         logEvent(`${student.name} was removed from the board.`);
         notify('Student removed', `${student.name} has been deleted from the leaderboard.`);
-        updateLeaderboard();
+        updateLeaderboard(previousLeaderId, false);
       }
 
       function changeScore(id, delta) {
@@ -977,7 +979,7 @@
 
         logEvent(`${student.name} ${delta > 0 ? 'earned' : 'lost'} ${Math.abs(delta)} points.`);
         playTone(delta > 0 ? 'add' : 'subtract');
-        updateLeaderboard(oldLeaderId);
+        updateLeaderboard(oldLeaderId, true);
       }
 
       function resetScores() {
@@ -992,7 +994,7 @@
         }));
         logEvent('All scores reset to zero.');
         notify('Scores reset', 'Every student is back to 0 points.');
-        updateLeaderboard();
+        updateLeaderboard(previousLeaderId, false);
       }
 
       function clearSession() {
@@ -1007,7 +1009,7 @@
         pauseTimer();
         logEvent('Session cleared.');
         notify('Session cleared', 'The classroom board has been reset.');
-        updateLeaderboard();
+        updateLeaderboard(previousLeaderId, false);
       }
 
       function advanceRound() {
@@ -1015,7 +1017,7 @@
         logEvent(`Round ${state.round} started.`);
         notify('New round', `Round ${state.round} is now live.`);
         playTone('rank');
-        updateLeaderboard();
+        updateLeaderboard(previousLeaderId, false);
       }
 
       function startTimer() {
@@ -1045,10 +1047,10 @@
         }, 1000);
       }
 
-      function updateLeaderboard(oldLeaderId = previousLeaderId) {
+      function updateLeaderboard(oldLeaderId = previousLeaderId, highlightRanks = false) {
         const beforePositions = measurePositions();
         const orderedStudents = currentOrderedStudents();
-        assignRanks(orderedStudents);
+        assignRanks(orderedStudents, highlightRanks);
         renderStats(orderedStudents);
         renderTopFive(orderedStudents);
         renderLeaderboard(orderedStudents);
@@ -1084,14 +1086,14 @@
         });
       }
 
-      function assignRanks(orderedStudents) {
+      function assignRanks(orderedStudents, highlightRanks) {
         let displayedRank = 0;
         let lastScore = null;
         orderedStudents.forEach((student, index) => {
           const previousRank = Number.isFinite(student.rank) ? student.rank : null;
           if (lastScore !== student.score) displayedRank = index + 1;
           student.rank = displayedRank;
-          student.rankDelta = previousRank === null ? 0 : previousRank - student.rank;
+          student.rankDelta = highlightRanks && previousRank !== null ? previousRank - student.rank : 0;
           lastScore = student.score;
         });
       }
@@ -1263,7 +1265,9 @@
           if (!delta) return;
           item.style.transform = `translateY(${delta}px)`;
           requestAnimationFrame(() => {
-            item.style.transform = 'translateY(0)';
+            requestAnimationFrame(() => {
+              item.style.transform = 'translateY(0)';
+            });
           });
         });
       }
@@ -1351,7 +1355,7 @@
         oscillator.type = wave;
         oscillator.frequency.value = frequency;
         gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.exponentialRampToValueAtTime(0.08, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(AUDIO_VOLUME, now + 0.01);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
         oscillator.connect(gain);
         gain.connect(audioContext.destination);
