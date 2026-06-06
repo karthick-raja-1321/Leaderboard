@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Guest Lecture Leaderboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Confetti canvas (drawn by JS) -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- ── HEADER ─────────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="header-left">
+      <span class="header-icon">🎓</span>
+      <div>
+        <h1 class="site-title">Guest Lecture Leaderboard</h1>
+        <p class="site-subtitle" id="session-label">Session in progress</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="timer-box">
+        <span class="timer-label">Session Timer</span>
+        <span class="timer-value" id="session-timer">00:00:00</span>
+      </div>
+      <button class="btn btn-outline btn-sm" id="btn-theme" title="Toggle theme">🌙</button>
+      <button class="btn btn-danger btn-sm" id="btn-reset" title="Reset everything">Reset All</button>
+    </div>
+  </header>
+
+  <!-- ── STATS BAR ──────────────────────────────────────────── -->
+  <section class="stats-bar" id="stats-bar">
+    <div class="stat-card">
+      <span class="stat-value" id="stat-total">0</span>
+      <span class="stat-label">Participants</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-highest">—</span>
+      <span class="stat-label">Highest Score</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-average">—</span>
+      <span class="stat-label">Average Score</span>
+    </div>
+    <div class="stat-card highlight-card">
+      <span class="stat-value" id="stat-top">—</span>
+      <span class="stat-label">🏆 Top Performer</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-active">0</span>
+      <span class="stat-label">Scored Participants</span>
+    </div>
+  </section>
+
+  <!-- ── MAIN LAYOUT ────────────────────────────────────────── -->
+  <main class="main-layout">
+
+    <!-- ── LEFT: SCOREBOARD ──────────────────────────────────── -->
+    <section class="panel scoreboard-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">📊 Scoreboard</h2>
+        <div class="panel-actions">
+          <button class="btn btn-outline btn-xs" id="btn-sort-score" title="Sort by score">Sort ↓</button>
+          <button class="btn btn-outline btn-xs" id="btn-sort-name" title="Sort by name">A-Z</button>
+          <button class="btn btn-outline btn-xs" id="btn-sort-time" title="Sort by join time">Joined</button>
+        </div>
+      </div>
+
+      <!-- Add participant form -->
+      <form class="add-form" id="add-form" autocomplete="off">
+        <input
+          class="input"
+          id="input-name"
+          type="text"
+          placeholder="Enter participant name…"
+          maxlength="40"
+          required
+        />
+        <input
+          class="input input-score"
+          id="input-score"
+          type="number"
+          placeholder="Score"
+          min="0"
+          max="9999"
+          value="0"
+        />
+        <button class="btn btn-primary" type="submit">+ Add</button>
+      </form>
+
+      <!-- Bulk add -->
+      <details class="bulk-section">
+        <summary class="bulk-toggle">Bulk add names (one per line)</summary>
+        <div class="bulk-body">
+          <textarea
+            class="textarea"
+            id="bulk-names"
+            rows="4"
+            placeholder="Alice&#10;Bob&#10;Charlie"
+          ></textarea>
+          <button class="btn btn-secondary btn-sm" id="btn-bulk-add">Add All</button>
+        </div>
+      </details>
+
+      <!-- Scoreboard list -->
+      <div class="scoreboard-list" id="scoreboard-list">
+        <div class="empty-state" id="scoreboard-empty">
+          <span class="empty-icon">🎯</span>
+          <p>No participants yet.<br/>Add names above to get started!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RIGHT: RANDOM PICKER + EXTRA ──────────────────────── -->
+    <aside class="right-column">
+
+      <!-- Random Name Picker -->
+      <section class="panel picker-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">🎲 Random Picker</h2>
+          <button class="btn btn-outline btn-xs" id="btn-picker-clear" title="Clear picked list">Clear picked</button>
+        </div>
+
+        <!-- Pool selector -->
+        <div class="picker-pool-row">
+          <label class="radio-label">
+            <input type="radio" name="picker-pool" value="scoreboard" checked /> From scoreboard
+          </label>
+          <label class="radio-label">
+            <input type="radio" name="picker-pool" value="custom" /> Custom list
+          </label>
+        </div>
+
+        <!-- Custom names input (shown when custom selected) -->
+        <div class="picker-custom-area" id="picker-custom-area" style="display:none">
+          <textarea
+            class="textarea"
+            id="picker-custom-names"
+            rows="3"
+            placeholder="Name1&#10;Name2&#10;Name3"
+          ></textarea>
+        </div>
+
+        <!-- Options -->
+        <div class="picker-options">
+          <label class="checkbox-label">
+            <input type="checkbox" id="picker-no-repeat" checked />
+            No repeat until all picked
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="picker-award-points" />
+            Award +1 point to picked participant
+          </label>
+        </div>
+
+        <!-- Pick button + result -->
+        <div class="picker-result-area">
+          <div class="picker-result" id="picker-result">
+            <span class="picker-result-idle">Press Pick to select a name!</span>
+          </div>
+          <button class="btn btn-primary btn-lg picker-btn" id="btn-pick">🎲 Pick!</button>
+        </div>
+
+        <!-- Picked history -->
+        <div class="picked-history" id="picked-history-container" style="display:none">
+          <p class="picked-history-label">Already picked:</p>
+          <div class="picked-chips" id="picked-chips"></div>
+        </div>
+      </section>
+
+      <!-- Quick Score Panel -->
+      <section class="panel quick-score-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">⚡ Quick Score</h2>
+          <span class="panel-hint">Select a participant, then use the buttons</span>
+        </div>
+        <div class="quick-score-body" id="quick-score-body">
+          <p class="empty-hint">Add participants to the scoreboard first.</p>
+        </div>
+      </section>
+
+    </aside>
+  </main>
+
+  <!-- ── LEADERBOARD (full width below) ────────────────────── -->
+  <section class="panel leaderboard-panel" id="leaderboard-section">
+    <div class="panel-header">
+      <h2 class="panel-title">🏅 Leaderboard</h2>
+      <button class="btn btn-outline btn-xs" id="btn-export" title="Export CSV">Export CSV</button>
+    </div>
+    <div class="leaderboard-grid" id="leaderboard-grid">
+      <div class="empty-state">
+        <span class="empty-icon">🏆</span>
+        <p>The leaderboard is empty. Add participants and start scoring!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── RESET CONFIRMATION MODAL ──────────────────────────── -->
+  <div class="modal-overlay" id="reset-modal" role="dialog" aria-modal="true" aria-label="Reset confirmation">
+    <div class="modal">
+      <h3 class="modal-title">⚠️ Reset Everything?</h3>
+      <p class="modal-body">This will delete all participants and scores. This action cannot be undone.</p>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="btn-reset-cancel">Cancel</button>
+        <button class="btn btn-danger" id="btn-reset-confirm">Yes, Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
