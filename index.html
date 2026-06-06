@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Classroom Leaderboard</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='%2356ccf2' d='M4 1v1H2v4c0 2 1.5 3.5 3.5 4L6 11H5v1h6v-1H9.5l-.5-1C13 9.5 14 8 14 6V2h-2V1H4zm1 1h6v3H5V2zM3 3h1v2.8C3.4 5.4 3 4.7 3 4V3zm9 0h1v1c0 .7-.4 1.4-1 1.8V3zM6.5 12v1H6v1h4v-1h-.5v-1h-3z'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg-main: #060816;
+      --bg-panel: rgba(16, 22, 44, 0.72);
+      --bg-card: rgba(20, 28, 56, 0.7);
+      --text-main: #edf2ff;
+      --text-muted: #9db0d9;
+      --accent: #56ccf2;
+      --accent-2: #bb6bff;
+      --success: #31d0aa;
+      --danger: #ff5d8f;
+      --warning: #ffcb5b;
+      --line: rgba(255, 255, 255, 0.08);
+      --shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
+      --glass: blur(22px);
+      --radius-xl: 28px;
+      --radius-lg: 20px;
+      --radius-md: 16px;
+      --transition: 220ms ease;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(86, 204, 242, 0.22), transparent 30%),
+        radial-gradient(circle at top right, rgba(187, 107, 255, 0.18), transparent 25%),
+        radial-gradient(circle at bottom, rgba(49, 208, 170, 0.14), transparent 30%),
+        linear-gradient(145deg, #050713, #0c1230 55%, #070a1f);
+      color: var(--text-main);
+      overflow-x: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      width: 320px;
+      height: 320px;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.22;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::before {
+      top: -80px;
+      left: -80px;
+      background: #29b6f6;
+    }
+
+    body::after {
+      right: -80px;
+      bottom: -100px;
+      background: #c87dff;
+    }
+
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(300px, 380px) 1fr;
+      gap: 24px;
+      padding: 24px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .panel,
+    .card,
+    .leaderboard-item,
+    .top-card,
+    .stat-pill,
+    .control-button,
+    .text-input,
+    .toggle,
+    .log-item,
+    .notification {
+      border: 1px solid var(--line);
+      background: var(--bg-panel);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      position: sticky;
+      top: 20px;
+      align-self: start;
+    }
+
+    .main-panel {
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .hero h1,
+    .section-title {
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.8rem, 2vw, 2.8rem);
+      text-shadow: 0 0 18px rgba(86, 204, 242, 0.28);
+    }
+
+    .hero p,
+    .muted,
+    .tie-note,
+    .empty-state {
+      color: var(--text-muted);
+    }
+
+    .hero p {
+      margin: 6px 0 0;
+      max-width: 520px;
+      line-height: 1.45;
+    }
+
+    .status-stack,
+    .timer-row,
+    .button-row,
+    .quick-actions,
+    .summary-grid,
+    .student-list,
+    .top-grid,
+    .stats-grid,
+    .control-grid,
+    .toggle-row {
+      display: grid;
+      gap: 12px;
+    }
+
+    .timer-row,
+    .button-row,
+    .quick-actions,
+    .toggle-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .badge,
+    .chip,
+    .stat-value,
+    .score-display,
+    .timer-value {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .card {
+      border-radius: var(--radius-lg);
+      padding: 18px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+    }
+
+    .text-input,
+    .control-button,
+    .toggle {
+      width: 100%;
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--text-main);
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition), background var(--transition);
+    }
+
+    .text-input {
+      outline: none;
+      font-size: 1rem;
+    }
+
+    .text-input:focus {
+      border-color: rgba(86, 204, 242, 0.7);
+      box-shadow: 0 0 0 3px rgba(86, 204, 242, 0.16);
+    }
+
+    .control-button,
+    .toggle {
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .control-button {
+      background: linear-gradient(135deg, rgba(86, 204, 242, 0.18), rgba(187, 107, 255, 0.16));
+    }
+
+    .control-button:hover,
+    .toggle:hover,
+    .leaderboard-item:hover,
+    .top-card:hover,
+    .stat-pill:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.16);
+      box-shadow: 0 18px 32px rgba(0, 0, 0, 0.32), 0 0 18px rgba(86, 204, 242, 0.08);
+    }
+
+    .control-button.primary {
+      background: linear-gradient(135deg, rgba(86, 204, 242, 0.38), rgba(108, 92, 231, 0.32));
+    }
+
+    .control-button.warn {
+      background: linear-gradient(135deg, rgba(255, 203, 91, 0.22), rgba(255, 93, 143, 0.22));
+    }
+
+    .control-button.danger {
+      background: linear-gradient(135deg, rgba(255, 93, 143, 0.25), rgba(255, 117, 140, 0.3));
+    }
+
+    .control-button.ghost {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .toggle input {
+      appearance: none;
+      width: 48px;
+      height: 28px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.16);
+      position: relative;
+      cursor: pointer;
+      transition: background var(--transition);
+      margin: 0;
+      flex-shrink: 0;
+    }
+
+    .toggle input::after {
+      content: "";
+      position: absolute;
+      top: 3px;
+      left: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: white;
+      transition: transform var(--transition);
+    }
+
+    .toggle input:checked {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+
+    .toggle input:checked::after {
+      transform: translateX(18px);
+    }
+
+    .timer-panel {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 18px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, rgba(49, 208, 170, 0.13), rgba(86, 204, 242, 0.08));
+      border: 1px solid rgba(49, 208, 170, 0.22);
+    }
+
+    .timer-value {
+      font-size: clamp(2rem, 3vw, 3rem);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-shadow: 0 0 14px rgba(49, 208, 170, 0.3);
+    }
+
+    .chip-row,
+    .stats-grid,
+    .summary-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .stat-pill {
+      border-radius: 18px;
+      padding: 16px;
+      min-height: 108px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .stat-value {
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .top-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .top-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 24px;
+      padding: 18px;
+      min-height: 188px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform var(--transition), box-shadow var(--transition), border-color var(--transition);
+    }
+
+    .top-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.24), transparent 55%);
+      opacity: 0.48;
+      pointer-events: none;
+    }
+
+    .top-card.rank-1 {
+      background: linear-gradient(160deg, rgba(94, 201, 255, 0.24), rgba(201, 235, 255, 0.12), rgba(126, 86, 255, 0.18));
+      box-shadow: 0 24px 42px rgba(69, 188, 255, 0.28), 0 0 22px rgba(176, 223, 255, 0.22);
+      animation: diamondGlow 3s infinite ease-in-out;
+    }
+
+    .top-card.rank-2 {
+      background: linear-gradient(160deg, rgba(216, 228, 255, 0.18), rgba(188, 197, 222, 0.1), rgba(148, 166, 212, 0.14));
+      animation: silverShine 4s infinite linear;
+    }
+
+    .top-card.rank-3 {
+      background: linear-gradient(160deg, rgba(255, 204, 122, 0.18), rgba(255, 172, 95, 0.12), rgba(255, 119, 81, 0.16));
+      animation: goldPulse 2.8s infinite ease-in-out;
+    }
+
+    .top-card.rank-4 {
+      background: linear-gradient(160deg, rgba(201, 215, 255, 0.16), rgba(112, 140, 198, 0.12));
+    }
+
+    .top-card.rank-5 {
+      background: linear-gradient(160deg, rgba(197, 137, 89, 0.18), rgba(122, 81, 53, 0.12));
+    }
+
+    .top-rank {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(5, 8, 22, 0.42);
+      width: fit-content;
+      font-weight: 700;
+    }
+
+    .tier-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      vertical-align: middle;
+    }
+
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, rgba(86, 204, 242, 0.26), rgba(187, 107, 255, 0.24));
+      color: white;
+      text-transform: uppercase;
+      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.08);
+    }
+
+    .leaderboard-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 320px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .leaderboard-item {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 22px;
+      margin-bottom: 12px;
+      transform-origin: center center;
+      transition: transform 260ms ease, box-shadow var(--transition), border-color var(--transition);
+    }
+
+    .leaderboard-item.new-entry {
+      animation: fadeZoomIn 450ms ease;
+    }
+
+    .leaderboard-item.score-up .score-display {
+      animation: popScore 420ms ease;
+      color: #8dffca;
+    }
+
+    .leaderboard-item.score-down .score-display {
+      animation: shakeScore 420ms ease;
+      color: #ff9ab5;
+    }
+
+    .leaderboard-item.rank-up::after,
+    .leaderboard-item.rank-down::after {
+      content: attr(data-rank-shift);
+      position: absolute;
+      right: 18px;
+      top: 12px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .leaderboard-item.rank-up::after { color: #86ffd3; }
+    .leaderboard-item.rank-down::after { color: #ff9fb4; }
+
+    .student-meta,
+    .score-stack,
+    .student-actions,
+    .top-copy {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .student-meta h3,
+    .top-copy h3,
+    .activity-log h3 {
+      margin: 0;
+    }
+
+    .student-meta h3,
+    .top-copy h3 {
+      font-size: 1.05rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .score-stack {
+      align-items: flex-end;
+      justify-content: center;
+      min-width: 120px;
+    }
+
+    .score-display {
+      font-size: 1.8rem;
+      font-weight: 800;
+      text-shadow: 0 0 14px rgba(86, 204, 242, 0.18);
+    }
+
+    .student-actions {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(64px, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+
+    .mini-btn {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: transform var(--transition), border-color var(--transition), background var(--transition);
+    }
+
+    .mini-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255, 255, 255, 0.18);
+    }
+
+    .mini-btn.plus-ten,
+    .mini-btn.plus-five { color: #8dffca; }
+    .mini-btn.minus-five,
+    .mini-btn.delete-btn { color: #ff9ab5; }
+
+    .badge,
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.06);
+      width: fit-content;
+    }
+
+    .activity-log {
+      height: 100%;
+    }
+
+    .log-list {
+      display: grid;
+      gap: 10px;
+      max-height: 600px;
+      overflow: auto;
+      padding-right: 2px;
+    }
+
+    .log-item {
+      border-radius: 18px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .log-item strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .empty-state {
+      padding: 28px 18px;
+      text-align: center;
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 22px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .notification-stack {
+      position: fixed;
+      top: 18px;
+      right: 18px;
+      display: grid;
+      gap: 12px;
+      z-index: 12;
+      width: min(320px, calc(100vw - 32px));
+      pointer-events: none;
+    }
+
+    .notification {
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(12, 18, 37, 0.88);
+      animation: slideNotice 2.8s ease forwards;
+    }
+
+    .notification strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    canvas.confetti {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .footer-note {
+      margin-top: 18px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .tiny {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    @keyframes diamondGlow {
+      0%, 100% { box-shadow: 0 24px 42px rgba(69, 188, 255, 0.22), 0 0 24px rgba(201, 235, 255, 0.18); }
+      50% { box-shadow: 0 28px 46px rgba(69, 188, 255, 0.3), 0 0 34px rgba(201, 235, 255, 0.26); }
+    }
+
+    @keyframes silverShine {
+      0% { background-position: -180px 0; }
+      100% { background-position: 240px 0; }
+    }
+
+    @keyframes goldPulse {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-3px) scale(1.02); }
+    }
+
+    @keyframes popScore {
+      0% { transform: scale(1); }
+      45% { transform: scale(1.18); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes shakeScore {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    @keyframes fadeZoomIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideNotice {
+      0% { opacity: 0; transform: translateX(40px) scale(0.95); }
+      10%, 80% { opacity: 1; transform: translateX(0) scale(1); }
+      100% { opacity: 0; transform: translateX(20px) scale(0.98); }
+    }
+
+    @media (max-width: 1180px) {
+      .app-shell,
+      .leaderboard-layout,
+      .top-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .panel {
+        position: static;
+      }
+
+      .top-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app-shell {
+        padding: 14px;
+      }
+
+      .hero,
+      .timer-panel,
+      .leaderboard-item {
+        grid-template-columns: 1fr;
+        display: grid;
+      }
+
+      .student-actions,
+      .button-row,
+      .quick-actions,
+      .timer-row,
+      .toggle-row,
+      .summary-grid,
+      .stats-grid,
+      .top-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .score-stack {
+        align-items: flex-start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas class="confetti" id="confettiCanvas"></canvas>
+  <div class="notification-stack" id="notificationStack"></div>
+
+  <div class="app-shell">
+    <aside class="panel">
+      <div class="hero">
+        <div>
+          <h1>Classroom Leaderboard</h1>
+          <p>Run live guest lecture competitions with instant ranking, top-5 spotlight cards, score effects, and classroom-friendly controls.</p>
+        </div>
+      </div>
+
+      <section class="card">
+        <div class="section-header">
+          <h2 class="section-title">Teacher Control Panel</h2>
+          <span class="badge" id="roundBadge">Round 1</span>
+        </div>
+
+        <div class="status-stack">
+          <input class="text-input" id="studentNameInput" type="text" maxlength="28" placeholder="Enter a student name" />
+          <div class="button-row">
+            <button class="control-button primary" id="addStudentBtn">Add Student</button>
+            <button class="control-button" id="randomStudentBtn">Random Student</button>
+          </div>
+          <div class="button-row">
+            <button class="control-button" id="nextRoundBtn">Next Round</button>
+            <button class="control-button ghost" id="exportCsvBtn">Export CSV</button>
+          </div>
+          <label class="toggle" for="sortToggle">
+            <span>Auto-sort leaderboard</span>
+            <input type="checkbox" id="sortToggle" checked />
+          </label>
+          <label class="toggle" for="muteToggle">
+            <span>Sound effects</span>
+            <input type="checkbox" id="muteToggle" />
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2 class="section-title">Session Timer</h2>
+          <span class="badge" id="timerStatus">Paused</span>
+        </div>
+        <div class="timer-panel">
+          <div>
+            <div class="timer-value" id="timerDisplay">00:00</div>
+            <div class="tiny">Track your live engagement round-by-round.</div>
+          </div>
+          <div class="timer-row" style="width: min(220px, 100%);">
+            <button class="control-button primary" id="startTimerBtn">Start</button>
+            <button class="control-button ghost" id="pauseTimerBtn">Pause</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2 class="section-title">Quick Actions</h2>
+          <span class="badge" id="studentCountBadge">0 Students</span>
+        </div>
+        <div class="quick-actions">
+          <button class="control-button warn" id="resetScoresBtn">Reset Scores</button>
+          <button class="control-button danger" id="clearSessionBtn">Clear Session</button>
+        </div>
+        <p class="footer-note">Tie handling keeps equal scores on the same rank while preserving the first student to reach that score. Sound uses lightweight Web Audio beeps and gracefully stays silent until you interact.</p>
+      </section>
+
+      <section class="card">
+        <div class="section-header">
+          <h2 class="section-title">Live Statistics</h2>
+          <span class="badge">Insights</span>
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+      </section>
+    </aside>
+
+    <main class="main-panel">
+      <section class="card">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Top 5 Spotlight</h2>
+            <div class="tiny">Diamond, platinum, gold, silver, and bronze cards update live as scores change.</div>
+          </div>
+          <span class="badge" id="leaderBadge">Awaiting leader</span>
+        </div>
+        <div class="top-grid" id="topFiveGrid"></div>
+      </section>
+
+      <section class="leaderboard-layout">
+        <section class="card">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Live Leaderboard</h2>
+              <div class="tiny" id="leaderboardSubtitle">Add students to start the session.</div>
+            </div>
+            <span class="badge" id="autoSortStatus">Auto-sort ON</span>
+          </div>
+          <div id="leaderboardList"></div>
+        </section>
+
+        <aside class="card activity-log">
+          <div class="section-header">
+            <div>
+              <h2 class="section-title">Activity Log</h2>
+              <div class="tiny">Recent score history and session events.</div>
+            </div>
+            <span class="badge" id="logCountBadge">0 events</span>
+          </div>
+          <div class="log-list" id="activityLog"></div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      const STORAGE_KEY = 'classroom-leaderboard-state-v1';
+      const randomNames = [
+        'Aarav', 'Diya', 'Meera', 'Vihaan', 'Aanya', 'Rishi', 'Saanvi', 'Ishaan', 'Kavin', 'Nila',
+        'Advik', 'Tara', 'Reyansh', 'Anika', 'Rudra', 'Maya', 'Tejas', 'Ira', 'Yuvan', 'Kiara'
+      ];
+      const AUDIO_VOLUME = 0.08;
+      const topStyles = [
+        { title: 'Diamond Crown', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M1 13v1h14v-1H1zm13-9-4 3.5L8 1 6 7.5 2 4l1.5 6.5h9L15 4z"/></svg>' },
+        { title: 'Platinum Charge', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="m8 1-6.5 5 6.5 9 6.5-9L8 1zm0 1.8 4.2 3.5-4.2 5.9-4.2-5.9L8 2.8z"/></svg>' },
+        { title: 'Gold Pulse', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1 9.8 6h5.2l-4.2 3 1.6 5L8 11l-4.4 3 1.6-5L1 6h5.2L8 1z"/></svg>' },
+        { title: 'Silver Sprint', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1 2 3v4c0 4 2.5 6.5 6 8 3.5-1.5 6-4 6-8V3L8 1zm0 1.5 5 1.8V7c0 3.2-2 5.2-5 6.5C5 12.2 3 10.2 3 7V4.3L8 2.5z"/></svg>' },
+        { title: 'Bronze Boost', icon: '<svg class="tier-icon" viewBox="0 0 16 16" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 1.5a5.5 5.5 0 1 1 0 11 5.5 5.5 0 0 1 0-11z"/></svg>' }
+      ];
+
+      const state = loadState() || {
+        students: [],
+        log: [],
+        autoSort: true,
+        muted: true,
+        round: 1,
+        elapsedSeconds: 0,
+        timerRunning: false,
+        nextId: 1,
+        leaderId: null
+      };
+
+      const dom = {
+        studentNameInput: document.getElementById('studentNameInput'),
+        addStudentBtn: document.getElementById('addStudentBtn'),
+        randomStudentBtn: document.getElementById('randomStudentBtn'),
+        nextRoundBtn: document.getElementById('nextRoundBtn'),
+        exportCsvBtn: document.getElementById('exportCsvBtn'),
+        sortToggle: document.getElementById('sortToggle'),
+        muteToggle: document.getElementById('muteToggle'),
+        resetScoresBtn: document.getElementById('resetScoresBtn'),
+        clearSessionBtn: document.getElementById('clearSessionBtn'),
+        startTimerBtn: document.getElementById('startTimerBtn'),
+        pauseTimerBtn: document.getElementById('pauseTimerBtn'),
+        timerDisplay: document.getElementById('timerDisplay'),
+        timerStatus: document.getElementById('timerStatus'),
+        studentCountBadge: document.getElementById('studentCountBadge'),
+        roundBadge: document.getElementById('roundBadge'),
+        statsGrid: document.getElementById('statsGrid'),
+        topFiveGrid: document.getElementById('topFiveGrid'),
+        leaderboardList: document.getElementById('leaderboardList'),
+        leaderboardSubtitle: document.getElementById('leaderboardSubtitle'),
+        autoSortStatus: document.getElementById('autoSortStatus'),
+        leaderBadge: document.getElementById('leaderBadge'),
+        activityLog: document.getElementById('activityLog'),
+        logCountBadge: document.getElementById('logCountBadge'),
+        notificationStack: document.getElementById('notificationStack'),
+        confettiCanvas: document.getElementById('confettiCanvas')
+      };
+
+      let timerHandle = null;
+      let audioContext = null;
+      let confettiParticles = [];
+      let confettiFrame = null;
+      let previousOrder = state.students.map(student => student.id);
+      let previousLeaderId = state.leaderId;
+
+      // Initialize missing stored properties so older localStorage data stays compatible with the latest UI state.
+      state.students = state.students.map(student => ({
+        ...student,
+        score: Number(student.score) || 0,
+        createdAt: student.createdAt || Date.now(),
+        lastModifiedAt: student.lastModifiedAt || Date.now(),
+        recentChange: student.recentChange || 0,
+        newEntry: Boolean(student.newEntry),
+        lastScoreGainAt: student.lastScoreGainAt || null,
+        improvement: Number(student.improvement) || 0,
+        avatar: student.avatar || createAvatar(student.name, student.id || 0)
+      }));
+
+      bindEvents();
+      syncToggles();
+      resumeTimerIfNeeded();
+      updateLeaderboard();
+
+      function bindEvents() {
+        dom.addStudentBtn.addEventListener('click', () => addStudent(dom.studentNameInput.value));
+        dom.randomStudentBtn.addEventListener('click', addRandomStudent);
+        dom.studentNameInput.addEventListener('keydown', event => {
+          if (event.key === 'Enter') addStudent(dom.studentNameInput.value);
+        });
+        dom.nextRoundBtn.addEventListener('click', advanceRound);
+        dom.exportCsvBtn.addEventListener('click', exportCsv);
+        dom.sortToggle.addEventListener('change', () => {
+          state.autoSort = dom.sortToggle.checked;
+          logEvent(state.autoSort ? 'Auto-sort enabled.' : 'Auto-sort paused. Current order locked.');
+          updateLeaderboard();
+        });
+        dom.muteToggle.addEventListener('change', () => {
+          state.muted = !dom.muteToggle.checked;
+          if (!state.muted) ensureAudio();
+          saveState();
+        });
+        dom.resetScoresBtn.addEventListener('click', resetScores);
+        dom.clearSessionBtn.addEventListener('click', clearSession);
+        dom.startTimerBtn.addEventListener('click', startTimer);
+        dom.pauseTimerBtn.addEventListener('click', pauseTimer);
+
+        dom.leaderboardList.addEventListener('click', event => {
+          const button = event.target.closest('button[data-action]');
+          if (!button) return;
+          const id = Number(button.dataset.id);
+          const action = button.dataset.action;
+          if (action === 'delete') deleteStudent(id);
+          if (action === 'score') changeScore(id, Number(button.dataset.delta));
+        });
+      }
+
+      function syncToggles() {
+        dom.sortToggle.checked = state.autoSort;
+        dom.muteToggle.checked = !state.muted;
+      }
+
+      function addStudent(rawName) {
+        const name = sanitizeName(rawName);
+        if (!name) {
+          notify('Name needed', 'Enter a student name before adding them.');
+          return;
+        }
+
+        const studentId = state.nextId++;
+        const student = {
+          id: studentId,
+          name,
+          avatar: createAvatar(name, studentId),
+          score: 0,
+          createdAt: Date.now(),
+          lastModifiedAt: Date.now(),
+          recentChange: 0,
+          newEntry: true,
+          lastScoreGainAt: null,
+          improvement: 0
+        };
+
+        state.students.push(student);
+        dom.studentNameInput.value = '';
+        logEvent(`${student.name} joined the session.`);
+        notify('Student added', `${student.name} is ready to compete.`);
+        updateLeaderboard(previousLeaderId, false);
+      }
+
+      function addRandomStudent() {
+        const name = uniqueRandomName();
+        addStudent(name);
+      }
+
+      function deleteStudent(id) {
+        const student = state.students.find(item => item.id === id);
+        if (!student) return;
+        state.students = state.students.filter(item => item.id !== id);
+        logEvent(`${student.name} was removed from the board.`);
+        notify('Student removed', `${student.name} has been deleted from the leaderboard.`);
+        updateLeaderboard(previousLeaderId, false);
+      }
+
+      function changeScore(id, delta) {
+        ensureAudio();
+        const student = state.students.find(item => item.id === id);
+        if (!student) return;
+
+        const oldLeaderId = currentOrderedStudents()[0]?.id || null;
+        student.score += delta;
+        student.lastModifiedAt = Date.now();
+        student.recentChange = delta;
+        student.newEntry = false;
+        if (delta > 0) {
+          student.lastScoreGainAt = Date.now();
+          student.improvement += delta;
+        }
+
+        logEvent(`${student.name} ${delta > 0 ? 'earned' : 'lost'} ${Math.abs(delta)} points.`);
+        playTone(delta > 0 ? 'add' : 'subtract');
+        updateLeaderboard(oldLeaderId, true);
+      }
+
+      function resetScores() {
+        state.students = state.students.map(student => ({
+          ...student,
+          score: 0,
+          recentChange: 0,
+          improvement: 0,
+          lastScoreGainAt: null,
+          lastModifiedAt: Date.now(),
+          newEntry: false
+        }));
+        logEvent('All scores reset to zero.');
+        notify('Scores reset', 'Every student is back to 0 points.');
+        updateLeaderboard(previousLeaderId, false);
+      }
+
+      function clearSession() {
+        state.students = [];
+        state.log = [];
+        state.round = 1;
+        state.elapsedSeconds = 0;
+        state.nextId = 1;
+        state.leaderId = null;
+        previousLeaderId = null;
+        previousOrder = [];
+        pauseTimer();
+        logEvent('Session cleared.');
+        notify('Session cleared', 'The classroom board has been reset.');
+        updateLeaderboard(previousLeaderId, false);
+      }
+
+      function advanceRound() {
+        state.round += 1;
+        logEvent(`Round ${state.round} started.`);
+        notify('New round', `Round ${state.round} is now live.`);
+        playTone('rank');
+        updateLeaderboard(previousLeaderId, false);
+      }
+
+      function startTimer() {
+        ensureAudio();
+        if (state.timerRunning) return;
+        state.timerRunning = true;
+        resumeTimerIfNeeded();
+        saveState();
+        renderTimer();
+      }
+
+      function pauseTimer() {
+        state.timerRunning = false;
+        if (timerHandle) clearInterval(timerHandle);
+        timerHandle = null;
+        saveState();
+        renderTimer();
+      }
+
+      function resumeTimerIfNeeded() {
+        renderTimer();
+        if (!state.timerRunning || timerHandle) return;
+        timerHandle = setInterval(() => {
+          state.elapsedSeconds += 1;
+          renderTimer();
+          saveState();
+        }, 1000);
+      }
+
+      function updateLeaderboard(oldLeaderId = previousLeaderId, highlightRanks = false) {
+        const beforePositions = measurePositions();
+        const orderedStudents = currentOrderedStudents();
+        assignRanks(orderedStudents, highlightRanks);
+        renderStats(orderedStudents);
+        renderTopFive(orderedStudents);
+        renderLeaderboard(orderedStudents);
+        renderLog();
+        renderMeta(orderedStudents);
+        animateRankMovement(beforePositions);
+
+        const newLeaderId = orderedStudents[0]?.id || null;
+        if (newLeaderId && newLeaderId !== oldLeaderId) {
+          const leader = orderedStudents[0];
+          notify('Rank 1 changed', `${leader.name} reached Rank 1!`);
+          triggerConfetti();
+          playTone('celebrate');
+        }
+
+        previousLeaderId = newLeaderId;
+        state.leaderId = newLeaderId;
+        previousOrder = orderedStudents.map(student => student.id);
+        state.students.forEach(student => {
+          student.newEntry = false;
+          student.recentChange = 0;
+        });
+        saveState();
+      }
+
+      function currentOrderedStudents() {
+        const students = [...state.students];
+        if (!state.autoSort) return students;
+        return students.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          if ((a.lastModifiedAt || 0) !== (b.lastModifiedAt || 0)) return (a.lastModifiedAt || 0) - (b.lastModifiedAt || 0);
+          return a.createdAt - b.createdAt;
+        });
+      }
+
+      function assignRanks(orderedStudents, highlightRanks) {
+        let displayedRank = 0;
+        let lastScore = null;
+        orderedStudents.forEach((student, index) => {
+          const previousRank = Number.isFinite(student.rank) ? student.rank : null;
+          if (lastScore !== student.score) displayedRank = index + 1;
+          student.rank = displayedRank;
+          student.rankDelta = highlightRanks && previousRank !== null ? previousRank - student.rank : 0;
+          lastScore = student.score;
+        });
+      }
+
+      function renderStats(orderedStudents) {
+        const totalScore = orderedStudents.reduce((sum, student) => sum + student.score, 0);
+        const mostImproved = [...orderedStudents].sort((a, b) => (b.improvement || 0) - (a.improvement || 0))[0];
+        const fastestGain = [...orderedStudents]
+          .filter(student => student.lastScoreGainAt)
+          .sort((a, b) => b.lastScoreGainAt - a.lastScoreGainAt)[0];
+        const stats = [
+          { label: 'Students', value: `${orderedStudents.length}` },
+          { label: 'Average Score', value: orderedStudents.length ? (totalScore / orderedStudents.length).toFixed(1) : '0.0' },
+          { label: 'Most Improved', value: mostImproved ? `${mostImproved.name} (+${mostImproved.improvement})` : 'No data yet' },
+          { label: 'Fastest Gain', value: fastestGain ? `${fastestGain.name}` : 'Waiting for scores' }
+        ];
+
+        dom.statsGrid.innerHTML = stats.map(stat => `
+          <div class="stat-pill">
+            <span class="stat-label">${stat.label}</span>
+            <span class="stat-value">${stat.value}</span>
+          </div>
+        `).join('');
+      }
+
+      function renderTopFive(orderedStudents) {
+        const topFive = orderedStudents.slice(0, 5);
+        dom.topFiveGrid.innerHTML = topStyles.map((style, index) => {
+          const student = topFive[index];
+          if (!student) {
+            return `
+              <article class="top-card rank-${index + 1}">
+                <div class="top-rank">${style.icon} Rank ${index + 1}</div>
+                <div class="top-copy">
+                  <h3>Open Slot</h3>
+                  <p class="muted">Add more students to unlock this podium card.</p>
+                </div>
+                <div class="badge">${style.title}</div>
+              </article>`;
+          }
+
+          return `
+            <article class="top-card rank-${index + 1}">
+              <div class="top-rank">${style.icon} Rank ${student.rank}</div>
+              <div class="top-copy">
+                <div class="avatar">${student.avatar}</div>
+                <h3>${escapeHtml(student.name)}</h3>
+                <p class="muted">${style.title}</p>
+              </div>
+              <div>
+                <div class="score-display">${student.score}</div>
+                <div class="chip">Round ${state.round} • ${rankDescriptor(student.rank)}</div>
+              </div>
+            </article>`;
+        }).join('');
+      }
+
+      function renderLeaderboard(orderedStudents) {
+        if (!orderedStudents.length) {
+          dom.leaderboardList.innerHTML = '<div class="empty-state">No students yet. Add a student manually or generate one at random to start the live scoreboard.</div>';
+          return;
+        }
+
+        const scoreCounts = orderedStudents.reduce((map, student) => {
+          map[student.score] = (map[student.score] || 0) + 1;
+          return map;
+        }, {});
+
+        dom.leaderboardList.innerHTML = orderedStudents.map((student, index) => {
+          const changeClass = student.recentChange > 0 ? 'score-up' : student.recentChange < 0 ? 'score-down' : '';
+          const rankClass = student.rankDelta > 0 ? 'rank-up' : student.rankDelta < 0 ? 'rank-down' : '';
+          const rankShift = student.rankDelta > 0 ? `▲ +${student.rankDelta}` : student.rankDelta < 0 ? `▼ ${student.rankDelta}` : '';
+          const isTied = scoreCounts[student.score] > 1;
+          return `
+            <article class="leaderboard-item ${student.newEntry ? 'new-entry' : ''} ${changeClass} ${rankClass}" data-id="${student.id}" data-rank-shift="${rankShift}">
+              <div class="avatar">${student.avatar}</div>
+              <div class="student-meta">
+                <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+                  <h3>${escapeHtml(student.name)}</h3>
+                  <span class="badge">#${student.rank}</span>
+                  ${isTied ? '<span class="chip">Tie score</span>' : ''}
+                  ${index === 0 ? '<span class="chip">Leader</span>' : ''}
+                </div>
+                <div class="muted">${index < 5 ? `Top 5 Spotlight • ${rankDescriptor(student.rank)}` : 'Chasing the podium'} • Round ${state.round}</div>
+                <div class="student-actions">
+                  <button class="mini-btn plus-ten" data-action="score" data-id="${student.id}" data-delta="10">+10</button>
+                  <button class="mini-btn plus-five" data-action="score" data-id="${student.id}" data-delta="5">+5</button>
+                  <button class="mini-btn minus-five" data-action="score" data-id="${student.id}" data-delta="-5">-5</button>
+                  <button class="mini-btn delete-btn" data-action="delete" data-id="${student.id}">Delete</button>
+                </div>
+              </div>
+              <div class="score-stack">
+                <div class="score-display">${student.score}</div>
+                <div class="tiny">${student.recentChange > 0 ? `+${student.recentChange} just now` : student.recentChange < 0 ? `${student.recentChange} just now` : 'Ready for points'}</div>
+              </div>
+            </article>`;
+        }).join('');
+      }
+
+      function renderLog() {
+        if (!state.log.length) {
+          dom.activityLog.innerHTML = '<div class="empty-state">Your live activity log will appear here as students join, gain points, and move across rounds.</div>';
+          dom.logCountBadge.textContent = '0 events';
+          return;
+        }
+        dom.logCountBadge.textContent = `${state.log.length} events`;
+        dom.activityLog.innerHTML = state.log.map(item => `
+          <div class="log-item">
+            <strong>${escapeHtml(item.title)}</strong>
+            <div class="tiny">${item.meta}</div>
+          </div>
+        `).join('');
+      }
+
+      function renderMeta(orderedStudents) {
+        dom.studentCountBadge.textContent = `${orderedStudents.length} ${orderedStudents.length === 1 ? 'Student' : 'Students'}`;
+        dom.roundBadge.textContent = `Round ${state.round}`;
+        dom.autoSortStatus.textContent = state.autoSort ? 'Auto-sort ON' : 'Auto-sort OFF';
+        dom.leaderboardSubtitle.textContent = orderedStudents.length
+          ? `${orderedStudents.length} active students • Scores re-rank in real time${state.autoSort ? '' : ' when auto-sort is re-enabled'}.`
+          : 'Add students to start the session.';
+        dom.leaderBadge.textContent = orderedStudents[0]
+          ? `${orderedStudents[0].name} leads with ${orderedStudents[0].score} pts`
+          : 'Awaiting leader';
+        renderTimer();
+      }
+
+      function renderTimer() {
+        dom.timerDisplay.textContent = formatTime(state.elapsedSeconds);
+        dom.timerStatus.textContent = state.timerRunning ? 'Running' : 'Paused';
+      }
+
+      function exportCsv() {
+        const orderedStudents = currentOrderedStudents();
+        assignRanks(orderedStudents);
+        const rows = [
+          ['Rank', 'Name', 'Score', 'Round'],
+          ...orderedStudents.map(student => [student.rank, student.name, student.score, state.round])
+        ];
+        const csv = rows.map(row => row.map(escapeCsvValue).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'leaderboard.csv';
+        link.click();
+        URL.revokeObjectURL(url);
+        logEvent('Leaderboard exported as CSV.');
+        notify('CSV exported', 'Downloaded the current leaderboard snapshot.');
+        renderLog();
+        saveState();
+      }
+
+      function measurePositions() {
+        const positions = new Map();
+        dom.leaderboardList.querySelectorAll('.leaderboard-item').forEach(item => {
+          positions.set(Number(item.dataset.id), item.getBoundingClientRect().top);
+        });
+        return positions;
+      }
+
+      function animateRankMovement(beforePositions) {
+        dom.leaderboardList.querySelectorAll('.leaderboard-item').forEach(item => {
+          const id = Number(item.dataset.id);
+          const previousTop = beforePositions.get(id);
+          if (previousTop === undefined) return;
+          const newTop = item.getBoundingClientRect().top;
+          const delta = previousTop - newTop;
+          if (!delta) return;
+          item.style.transform = `translateY(${delta}px)`;
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              item.style.transform = 'translateY(0)';
+            });
+          });
+        });
+      }
+
+      function logEvent(title) {
+        state.log.unshift({
+          title,
+          meta: `${formatTime(state.elapsedSeconds)} • Round ${state.round} • ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+        });
+        state.log = state.log.slice(0, 18);
+      }
+
+      function notify(title, message) {
+        const notice = document.createElement('div');
+        notice.className = 'notification';
+        notice.innerHTML = `<strong>${escapeHtml(title)}</strong><div>${escapeHtml(message)}</div>`;
+        dom.notificationStack.appendChild(notice);
+        window.setTimeout(() => notice.remove(), 2800);
+      }
+
+      function triggerConfetti() {
+        const canvas = dom.confettiCanvas;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        confettiParticles = Array.from({ length: 110 }, (_, index) => ({
+          x: Math.random() * canvas.width,
+          y: -20 - Math.random() * canvas.height * 0.3,
+          size: 4 + Math.random() * 8,
+          speedY: 2 + Math.random() * 4,
+          speedX: -2 + Math.random() * 4,
+          color: ['#56ccf2', '#bb6bff', '#31d0aa', '#ffcb5b', '#ffffff'][index % 5],
+          rotation: Math.random() * Math.PI,
+          rotationSpeed: -0.08 + Math.random() * 0.16
+        }));
+
+        const start = performance.now();
+        cancelAnimationFrame(confettiFrame);
+
+        const frame = now => {
+          const elapsed = now - start;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          confettiParticles.forEach(particle => {
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            particle.rotation += particle.rotationSpeed;
+            ctx.save();
+            ctx.translate(particle.x, particle.y);
+            ctx.rotate(particle.rotation);
+            ctx.fillStyle = particle.color;
+            ctx.fillRect(-particle.size / 2, -particle.size / 2, particle.size, particle.size * 0.6);
+            ctx.restore();
+          });
+          if (elapsed < 1800) {
+            confettiFrame = requestAnimationFrame(frame);
+          } else {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+          }
+        };
+        confettiFrame = requestAnimationFrame(frame);
+      }
+
+      function ensureAudio() {
+        if (audioContext || state.muted) return;
+        // Keep the webkit-prefixed fallback for older Safari versions.
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        audioContext = new AudioCtx();
+      }
+
+      function playTone(type) {
+        if (state.muted || !audioContext) return;
+        const now = audioContext.currentTime;
+        const settings = {
+          add: [740, 0.09, 'triangle'],
+          subtract: [220, 0.08, 'sawtooth'],
+          rank: [540, 0.12, 'square'],
+          celebrate: [880, 0.2, 'triangle']
+        }[type] || [440, 0.08, 'sine'];
+
+        const [frequency, duration, wave] = settings;
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = wave;
+        oscillator.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(AUDIO_VOLUME, now + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        oscillator.connect(gain);
+        gain.connect(audioContext.destination);
+        oscillator.start(now);
+        oscillator.stop(now + duration);
+      }
+
+      function uniqueRandomName() {
+        const existing = new Set(state.students.map(student => student.name));
+        const pool = randomNames.filter(name => !existing.has(name));
+        if (pool.length) return pool[Math.floor(Math.random() * pool.length)];
+        return `${randomNames[Math.floor(Math.random() * randomNames.length)]} ${state.nextId}`;
+      }
+
+      function createAvatar(name, seed) {
+        const initials = name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase();
+        return initials || '#';
+      }
+
+      function sanitizeName(value) {
+        return value.trim().replace(/\s+/g, ' ').slice(0, 28);
+      }
+
+      function rankDescriptor(rank) {
+        if (rank === 1) return 'Diamond';
+        if (rank === 2) return 'Platinum';
+        if (rank === 3) return 'Gold';
+        if (rank === 4) return 'Silver';
+        if (rank === 5) return 'Bronze';
+        return 'Rising';
+      }
+
+      function formatTime(totalSeconds) {
+        const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+        const seconds = (totalSeconds % 60).toString().padStart(2, '0');
+        return `${minutes}:${seconds}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function escapeCsvValue(value) {
+        return `"${String(value).replaceAll('"', '""')}"`;
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function loadState() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+        } catch {
+          return null;
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
